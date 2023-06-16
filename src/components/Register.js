@@ -1,5 +1,6 @@
 import React from "react";
 import Authorization from "./Authorization";
+import { Link } from "react-router-dom";
 
 function Register(props) {
   const { handleDataForm, setCurrentRoute } = props;
@@ -16,7 +17,7 @@ function Register(props) {
       handleDataForm={handleDataForm}
     >
       <p className="authorization__question">Уже зарегистрированы?
-        <a href="/sign-in" name="Войти" className="authorization__question_link">Войти</a>
+        <Link to="/sign-in" className="authorization__question_link"> Войти</Link>
       </p>
     </Authorization>
   );

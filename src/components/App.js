@@ -22,10 +22,10 @@ function App() {
   const location = useLocation();
 
   const [loggedIn, setLoggedIn] = React.useState(false);
-
-  const [currentRoute, setCurrentRoute] = React.useState("");
   const [userEmail, setUserEmail] = React.useState("");
 
+  const [currentRoute, setCurrentRoute] = React.useState("");
+  
   const [currentUser, setCurrentUser] = React.useState({});
   const [cards, setCards] = React.useState([]);
 
@@ -40,6 +40,12 @@ function App() {
   const textInfoTooltip = result
     ? "Вы успешно зарегистрировались!"
     : "Что-то пошло не так! Попробуйте еще раз.";
+
+
+  const handleLogin = ({ email }) => {
+      setLoggedIn(true);
+      setUserEmail(email);
+  };
 
   React.useEffect(() => {
     tockenCheck();
@@ -67,21 +73,104 @@ function App() {
       });
   }
 
-  const handleLogin = ({ email }) => {
-    setLoggedIn(true);
-    setUserEmail(email);
-  };
+  function handleCardLike(card) {
+    const isLiked = card.likes.some((i) => i._id === currentUser._id);
+    if (!isLiked) {
+      api
+        .putLike(card._id)
+        .then((newCard) => {
+          setCards((state) =>
+            state.map((c) => (c._id === card._id ? newCard : c))
+          );
+        })
+        .catch((err) => {
+          console.error(`Ошибка: ${err}`);
+        });
+    } else {
+      api
+        .deleteLike(card._id)
+        .then((newCard) => {
+          setCards((state) =>
+            state.map((c) => (c._id === card._id ? newCard : c))
+          );
+        })
+        .catch((err) => {
+          console.error(`Ошибка: ${err}`);
+        });
+    }
+  }
 
-  React.useEffect(() => {
+  function handleCardDelete(card) {
     api
-      .getUserInfo()
-      .then((userData) => {
-        setCurrentUser(userData);
+      .deleteCard(card._id)
+      .then(() => {
+        setCards((state) => state.filter((c) => c._id !== card._id));
       })
       .catch((err) => {
         console.error(`Ошибка: ${err}`);
       });
-  }, []);
+  }
+
+  function handleEditProfileClick() {
+    setIsEditProfilePopupOpen(true);
+  }
+
+  function handleUpdateUser(userData) {
+    api
+      .patchUserInfo(userData)
+      .then((userData) => {
+        setCurrentUser(userData);
+        closeAllPopups();
+      })
+      .catch((err) => {
+        console.err(`Ошибка: ${err}`);
+      });
+  }
+
+  function handleEditAvatarClick() {
+    setIsEditAvatarPopupOpen(true);
+  }
+
+  function handleUpdateAvatar(avatar) {
+    console.log(avatar);
+    api
+      .patchAvatar(avatar)
+      .then((avatar) => {
+        setCurrentUser(avatar);
+        closeAllPopups();
+      })
+      .catch((err) => {
+        console.error(`Ошибка: ${err}`);
+      });
+  }
+
+  function handleAddPlaceClick() {
+    setIsAddPlacePopupOpen(true);
+  }
+
+  function handleAddPlaceSubmit(place) {
+    api
+      .postUserCard(place)
+      .then((newCard) => {
+        setCards([newCard, ...cards]);
+        closeAllPopups();
+      })
+      .catch((err) => {
+        console.error(`Ошибка: ${err}`);
+      });
+  }
+
+  function handleCardClick(card) {
+    setSelectedCard(card);
+  }
+
+  function closeAllPopups() {
+    setIsEditProfilePopupOpen(false);
+    setIsAddPlacePopupOpen(false);
+    setIsEditAvatarPopupOpen(false);
+    setSelectedCard({});
+    setShowInfoToolTip(false);
+  }
 
   function handleRegister(data) {
     const { email, password } = data;
@@ -91,7 +180,7 @@ function App() {
         setResult(true);
         setShowInfoToolTip(true);
         navigate("/sign-up", {
-          replace: true,
+          replace: true
         });
       })
       .catch((err) => {
@@ -105,7 +194,7 @@ function App() {
     const { email, password } = data;
     const dataAuthUser = {
       email: email,
-      password: password,
+      password: password
     };
     auth
       .authorize(email, password)
@@ -161,116 +250,6 @@ function App() {
       navigate("/sign-in");
       setLoggedIn(false);
     }
-  }
-
-  React.useEffect(() => {
-    api
-      .getArrCards()
-      .then((cardsData) => {
-        setCards(cardsData);
-      })
-      .catch((err) => {
-        console.error(`Ошибка: ${err}`);
-      });
-  }, []);
-
-  function handleAddPlaceClick() {
-    setIsAddPlacePopupOpen(true);
-  }
-
-  function handleAddPlaceSubmit(place) {
-    api
-      .postUserCard(place)
-      .then((newCard) => {
-        setCards([newCard, ...cards]);
-        closeAllPopups();
-      })
-      .catch((err) => {
-        console.error(`Ошибка: ${err}`);
-      });
-  }
-
-  function handleEditProfileClick() {
-    setIsEditProfilePopupOpen(true);
-  }
-
-  function handleEditAvatarClick() {
-    setIsEditAvatarPopupOpen(true);
-  }
-
-  function handleCardClick(card) {
-    setSelectedCard(card);
-  }
-
-  function closeAllPopups() {
-    setIsEditProfilePopupOpen(false);
-    setIsAddPlacePopupOpen(false);
-    setIsEditAvatarPopupOpen(false);
-    setSelectedCard({});
-    setShowInfoToolTip(false);
-  }
-
-  function handleUpdateAvatar(avatar) {
-    console.log(avatar);
-    api
-      .patchAvatar(avatar)
-      .then((avatar) => {
-        setCurrentUser(avatar);
-        closeAllPopups();
-      })
-      .catch((err) => {
-        console.error(`Ошибка: ${err}`);
-      });
-  }
-
-  function handleUpdateUser(userData) {
-    api
-      .patchUserInfo(userData)
-      .then((userData) => {
-        setCurrentUser(userData);
-        closeAllPopups();
-      })
-      .catch((err) => {
-        console.err(`Ошибка: ${err}`);
-      });
-  }
-
-  function handleCardLike(card) {
-    const isLiked = card.likes.some((i) => i._id === currentUser._id);
-    if (!isLiked) {
-      api
-        .putLike(card._id)
-        .then((newCard) => {
-          setCards((state) =>
-            state.map((c) => (c._id === card._id ? newCard : c))
-          );
-        })
-        .catch((err) => {
-          console.error(`Ошибка: ${err}`);
-        });
-    } else {
-      api
-        .deleteLike(card._id)
-        .then((newCard) => {
-          setCards((state) =>
-            state.map((c) => (c._id === card._id ? newCard : c))
-          );
-        })
-        .catch((err) => {
-          console.error(`Ошибка: ${err}`);
-        });
-    }
-  }
-
-  function handleCardDelete(card) {
-    api
-      .deleteCard(card._id)
-      .then(() => {
-        setCards((state) => state.filter((c) => c._id !== card._id));
-      })
-      .catch((err) => {
-        console.error(`Ошибка: ${err}`);
-      });
   }
 
   return (
@@ -348,7 +327,7 @@ function App() {
         <EditAvatarPopup
           isOpen={isEditAvatarPopupOpen}
           onClose={closeAllPopups}
-          onUpdateUser={handleUpdateAvatar}
+          onUpdateAvatar={handleUpdateAvatar}
         />
 
         <AddPlacePopup
